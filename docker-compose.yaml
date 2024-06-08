@@ -89,6 +89,7 @@ services:
       - "--api.insecure=true" # Enable Traefik dashboard
       - "--providers.docker=true"
       - "--entrypoints.web.address=:80"
+      - "--accesslog=true" # Enable access log
     ports:
       - "80:80"   # The HTTP port
       - "8080:8080" # The Traefik dashboard port
