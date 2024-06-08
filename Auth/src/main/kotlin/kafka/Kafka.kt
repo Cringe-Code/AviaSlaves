@@ -11,8 +11,10 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
 import app.aviaslaves.auth.common.Environment
+import org.apache.kafka.common.errors.TopicExistsException
 import java.time.Duration
 import java.util.*
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
 
 class Kafka private constructor() {
@@ -45,10 +47,12 @@ class Kafka private constructor() {
                 putAll(props)
             }
             AdminClient.create(adminProps).use { client ->
-                val existingTopics = client.listTopics().names().get()
-                val newTopics = topics.filterNot { it in existingTopics }
-                if (newTopics.isNotEmpty()) {
-                    client.createTopics(newTopics.map { NewTopic(it, 1, 1.toShort()) }).all().get()
+                try {
+                    client.createTopics(topics.map { NewTopic(it, 1, 1.toShort()) }).all().get()
+                } catch (e: ExecutionException) {
+                    if (e.cause !is TopicExistsException) {
+                        throw e
+                    }
                 }
             }
         }

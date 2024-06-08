@@ -10,13 +10,16 @@ import java.util.Base64
 import mu.KotlinLogging
 
 object Environment {
-    private val dotenv: Dotenv = Dotenv.configure().ignoreIfMissing().load()
+    private val dotenv: Dotenv = Dotenv.configure()
+        .directory(".env")
+        .ignoreIfMissing()
+        .load()
 
     val bindPort: String by lazy { dotenv["BIND_PORT"] ?: "3000" }
     val databaseURL: String by lazy { "jdbc:postgresql://$DB_HOST:$DB_PORT/$DB_NAME?user=$DB_USER&password=$DB_PASSWORD" }
 
-    val accessPrivateKey: RSAPrivateKey = loadPrivateKey("./Auth/src/main/resources/keys/jwt_key.pem")
-    val refreshPrivateKey: RSAPrivateKey = loadPrivateKey("./Auth/src/main/resources/keys/jwt_key2.pem")
+    val accessPrivateKey: RSAPrivateKey = loadPrivateKey("jwt_key.pem")
+    val refreshPrivateKey: RSAPrivateKey = loadPrivateKey("jwt_key2.pem")
 
     private val DB_HOST: String by lazy { dotenv["DATABASE_HOST"] ?: throw IllegalArgumentException("Database HOST is not defined") }
     private val DB_PORT: Int by lazy { dotenv["DATABASE_PORT"]?.toInt() ?: 5432 }
