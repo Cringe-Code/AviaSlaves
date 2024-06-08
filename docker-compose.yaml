@@ -6,33 +6,60 @@ services:
     container_name: aviaslaves-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: prisma
-      POSTGRES_PASSWORD: prisma
-      POSTGRES_DB: prisma
+      POSTGRES_USER: slave
+      POSTGRES_PASSWORD: slave
+      POSTGRES_DB: aviaslaves
     ports:
       - "5432:5432"
     volumes:
       - aviaslaves_postgres_data:/var/lib/postgresql/data
+    deploy:
+      replicas: 0
 
   auth:
     build:
       dockerfile: Dockerfile
-      context: ./AuthService
-      args:
-        NODE_ENV: production
+      context: ./Auth
     stop_signal: SIGINT
     stop_grace_period: 5s
     environment:
-      DATABASE_URL: "postgresql://prisma:prisma@postgres:5432/authdb"
-      FRONTEND_URL: "http://localhost"
-      NODE_ENV: production
-      BACKEND_PORT: 3001
-    depends_on:
-      - postgres
-    entrypoint: ["/usr/src/app/scripts/init.sh"]
-    command: ["bun", "run", "start"]
+      DATABASE_HOST: cloud.ambassador4ik.dev
+      DATABASE_PORT: 5432
+      DATABASE_NAME: auth
+      DATABASE_USER:
+      DATABASE_PASS:
+      KAFKA_URL: kafka:9092
+      #BACKEND_PORT: 3001
+    #depends_on:
+      #- postgres
+    command: ["sh", "-c", "java -jar auth.jar"]
     deploy:
-      replicas: 2
+      replicas: 1
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth-service.rule=PathPrefix(`/auth`)"
+      - "traefik.http.routers.auth-service.entrypoints=web"
+      - "traefik.http.services.auth-service.loadbalancer.server.port=3001"
+
+  tickets:
+    build:
+      dockerfile: Dockerfile
+      context: ./Tickets
+    stop_signal: SIGINT
+    stop_grace_period: 5s
+    environment:
+      DATABASE_HOST: cloud.ambassador4ik.dev
+      DATABASE_PORT: 5432
+      DATABASE_NAME: tickets
+      DATABASE_USER:
+      DATABASE_PASS:
+      KAFKA_URL: kafka:9092
+      # BACKEND_PORT: 3001
+      #depends_on:
+      #- postgres
+    command: [ "sh", "-c", "java -jar tickets.jar" ]
+    deploy:
+      replicas: 1
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.auth-service.rule=PathPrefix(`/auth`)"
@@ -50,15 +77,24 @@ services:
       - "8080:8080" # The Traefik dashboard port
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    deploy:
+      replicas: 0
 
   zookeeper:
     image: 'bitnami/zookeeper:latest'
+    logging:
+      driver: none
     ports:
       - '2181:2181'
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
+    deploy:
+      replicas: 1
+
   kafka:
     image: 'bitnami/kafka:latest'
+    logging:
+      driver: none
     ports:
       - '9092:9092'
     environment:
@@ -69,6 +105,8 @@ services:
       - ALLOW_PLAINTEXT_LISTENER=yes
     depends_on:
       - zookeeper
+    deploy:
+      replicas: 1
 
 volumes:
   aviaslaves_postgres_data:

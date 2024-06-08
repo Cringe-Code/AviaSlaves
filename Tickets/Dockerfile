@@ -22,7 +22,7 @@ FROM eclipse-temurin:21-jdk-alpine
 WORKDIR /app
 
 # Copy the built jar file from the builder stage
-COPY --from=builder /app/target/*.jar /app/auth.jar
+COPY --from=builder /app/target/*.jar /app/tickets.jar
 
 # Copy additional resources if needed
 # COPY config /app/config
@@ -31,4 +31,4 @@ COPY --from=builder /app/target/*.jar /app/auth.jar
 EXPOSE 8080
 
 # Specify the command to run the application
-CMD ["sh", "-c", "java -jar auth.jar"]
+CMD ["sh", "-c", "java -jar tickets.jar"]
