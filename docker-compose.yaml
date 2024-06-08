@@ -12,6 +12,8 @@ services:
       - auth_postgres_data:/var/lib/postgresql/data
     deploy:
       replicas: 1
+    ports:
+      - "5432:5432" # For testing
 
   postgres-tickets:
     image: postgres:latest
@@ -24,6 +26,8 @@ services:
       - tickets_postgres_data:/var/lib/postgresql/data
     deploy:
       replicas: 1
+    ports:
+      - "5433:5432" # For testing
 
   auth:
     build:
@@ -48,7 +52,7 @@ services:
       replicas: 1
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.auth-service.rule=PathPrefix(`/auth`)"
+      - "traefik.http.routers.auth-service.rule=(PathPrefix(`/auth`) || PathPrefix(`/token`))"
       - "traefik.http.routers.auth-service.entrypoints=web"
       - "traefik.http.services.auth-service.loadbalancer.server.port=3000"
 

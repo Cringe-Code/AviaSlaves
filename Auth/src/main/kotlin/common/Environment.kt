@@ -8,6 +8,8 @@ import java.security.interfaces.RSAPrivateKey
 import java.security.spec.PKCS8EncodedKeySpec
 import java.util.Base64
 import mu.KotlinLogging
+import java.security.interfaces.RSAPublicKey
+import java.security.spec.X509EncodedKeySpec
 
 object Environment {
     private val dotenv: Dotenv = Dotenv.configure()
@@ -20,6 +22,8 @@ object Environment {
 
     val accessPrivateKey: RSAPrivateKey = loadPrivateKey("jwt_key.pem")
     val refreshPrivateKey: RSAPrivateKey = loadPrivateKey("jwt_key2.pem")
+    val accessPublicKey: RSAPublicKey = loadPublicKey("jwt_public_key.pem")
+    val refreshPublicKey: RSAPublicKey = loadPublicKey("jwt_public_key2.pem")
 
     private val DB_HOST: String by lazy { dotenv["DATABASE_HOST"] ?: throw IllegalArgumentException("Database HOST is not defined") }
     private val DB_PORT: Int by lazy { dotenv["DATABASE_PORT"]?.toInt() ?: 5432 }
@@ -39,6 +43,18 @@ object Environment {
         val decodedKey = Base64.getDecoder().decode(keyBytes)
         val keySpec = PKCS8EncodedKeySpec(decodedKey)
         return KeyFactory.getInstance("RSA").generatePrivate(keySpec) as RSAPrivateKey
+    }
+
+    private fun loadPublicKey(filePath: String): RSAPublicKey {
+        val keyFile = File(filePath)
+        val keyBytes = keyFile.readText(Charsets.UTF_8)
+            .replace("\n", "")
+            .replace("\r", "")
+            .replace("-----BEGIN PUBLIC KEY-----", "")
+            .replace("-----END PUBLIC KEY-----", "")
+        val decodedKey = Base64.getDecoder().decode(keyBytes)
+        val keySpec = X509EncodedKeySpec(decodedKey)
+        return KeyFactory.getInstance("RSA").generatePublic(keySpec) as RSAPublicKey
     }
 
     @JvmField

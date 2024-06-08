@@ -9,13 +9,13 @@ import io.ktor.server.routing.*
 
 fun Route.tokenRoutes() {
     route("/token") {
-        post("/data") {
+        get("/data") {
             call.verifyRefreshTokenAndGetData()
         }
-        post("/verify") {
+        get("/verify") {
             call.verifyAccessToken()
         }
-        post("/refresh") {
+        get("/refresh") {
             call.refreshTokens()
         }
     }
