@@ -7,6 +7,7 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 import app.aviaslaves.tickets.common.Environment.databaseURL
+import org.jetbrains.exposed.sql.insert
 
 fun initDatabase() {
     Database.connect(
@@ -16,5 +17,10 @@ fun initDatabase() {
 
     transaction {
         SchemaUtils.create(Users, Stations, Orders)
+
+        Stations.insert { it[station] = "York" }
+        Stations.insert { it[station] = "New York" }
+        Stations.insert { it[station] = "Old York" }
+        Stations.insert { it[station] = "Yet Another York" }
     }
 }

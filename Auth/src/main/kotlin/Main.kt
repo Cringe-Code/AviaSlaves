@@ -18,7 +18,7 @@ fun main() {
     embeddedServer(Netty, port = 3000) {
         install(ContentNegotiation) {
             json()
-    }
+        }
         routing {
             authRoutes()
             tokenRoutes()

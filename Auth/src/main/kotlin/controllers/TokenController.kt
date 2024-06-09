@@ -29,6 +29,7 @@ suspend fun ApplicationCall.verifyAccessToken() {
         respond(HttpStatusCode.Unauthorized, "Access token not found")
     }
 }
+
 suspend fun ApplicationCall.verifyRefreshTokenAndGetData() {
     val refreshToken = request.cookies["refreshToken"]
 

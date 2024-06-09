@@ -79,7 +79,7 @@ services:
       replicas: 1
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.tickets-service.rule=PathPrefix(`/ticket`)"
+      - "traefik.http.routers.tickets-service.rule=PathPrefix(`/tickets`)"
       - "traefik.http.routers.tickets-service.entrypoints=web"
       - "traefik.http.services.tickets-service.loadbalancer.server.port=3000"
 
