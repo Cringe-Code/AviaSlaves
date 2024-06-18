@@ -1,0 +1,132 @@
+version: '3.8'
+
+services:
+  postgres-auth:
+    image: postgres:latest
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: slave
+      POSTGRES_PASSWORD: slave
+      POSTGRES_DB: auth
+    volumes:
+      - auth_postgres_data:/var/lib/postgresql/data
+    deploy:
+      replicas: 1
+    ports:
+      - "5432:5432" # For testing
+
+  postgres-tickets:
+    image: postgres:latest
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: slave
+      POSTGRES_PASSWORD: slave
+      POSTGRES_DB: tickets
+    volumes:
+      - tickets_postgres_data:/var/lib/postgresql/data
+    deploy:
+      replicas: 1
+    ports:
+      - "5433:5432" # For testing
+
+  auth:
+    build:
+      dockerfile: Dockerfile
+      context: ./Auth
+    stop_signal: SIGINT
+    stop_grace_period: 2s
+    environment:
+      DATABASE_HOST: postgres-auth
+      DATABASE_PORT: 5432
+      DATABASE_NAME: auth
+      DATABASE_USER: slave
+      DATABASE_PASS: slave
+      KAFKA_URL: kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres-auth:
+        condition: service_started
+    command: ["sh", "-c", "java -jar auth.jar"]
+    deploy:
+      replicas: 1
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth-service.rule=(PathPrefix(`/auth`) || PathPrefix(`/token`))"
+      - "traefik.http.routers.auth-service.entrypoints=web"
+      - "traefik.http.services.auth-service.loadbalancer.server.port=3000"
+
+  tickets:
+    build:
+      dockerfile: Dockerfile
+      context: ./Tickets
+    stop_signal: SIGINT
+    stop_grace_period: 2s
+    environment:
+      DATABASE_HOST: postgres-tickets
+      DATABASE_PORT: 5432
+      DATABASE_NAME: tickets
+      DATABASE_USER: slave
+      DATABASE_PASS: slave
+      KAFKA_URL: kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres-tickets:
+        condition: service_started
+    command: [ "sh", "-c", "java -jar tickets.jar" ]
+    deploy:
+      replicas: 1
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tickets-service.rule=PathPrefix(`/tickets`)"
+      - "traefik.http.routers.tickets-service.entrypoints=web"
+      - "traefik.http.services.tickets-service.loadbalancer.server.port=3000"
+
+  traefik:
+    image: traefik:v3.0
+    command:
+      - "--api.insecure=true" # Enable Traefik dashboard
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+      - "--accesslog=true" # Enable access log
+    ports:
+      - "80:80"   # The HTTP port
+      - "8080:8080" # The Traefik dashboard port
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    deploy:
+      replicas: 1
+
+  zookeeper:
+    image: 'bitnami/zookeeper:latest'
+    logging:
+      driver: none
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    deploy:
+      replicas: 1
+
+  kafka:
+    image: 'bitnami/kafka:latest'
+    logging:
+      driver: none
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    depends_on:
+      - zookeeper
+    healthcheck:
+      test: kafka-topics.sh --list --bootstrap-server kafka:9092 || exit 1
+      interval: 3s
+      timeout: 10s
+      retries: 5
+    deploy:
+      replicas: 1
+
+volumes:
+  auth_postgres_data:
+  tickets_postgres_data:

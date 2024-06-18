@@ -6,12 +6,16 @@
 
     <groupId>app.aviaslaves.tickets</groupId>
     <artifactId>Tickets</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.1</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <kotlin.code.style>official</kotlin.code.style>
         <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
+
+        <exposed.version>0.50.1</exposed.version>
+        <postgresql.version>42.7.3</postgresql.version>
+        <ktor.version>2.3.11</ktor.version>
     </properties>
 
     <repositories>
@@ -23,8 +27,40 @@
 
     <build>
         <sourceDirectory>src/main/kotlin</sourceDirectory>
-        <testSourceDirectory>src/test/kotlin</testSourceDirectory>
         <plugins>
+            <!-- Maven JAR Plugin -->
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.3.0</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>app.aviaslaves.tickets.MainKt</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>app.aviaslaves.tickets.MainKt</mainClass>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-maven-plugin</artifactId>
@@ -45,6 +81,18 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <compilerPlugins>
+                        <plugin>kotlinx-serialization</plugin>
+                    </compilerPlugins>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.jetbrains.kotlin</groupId>
+                        <artifactId>kotlin-maven-serialization</artifactId>
+                        <version>1.9.23</version>
+                    </dependency>
+                </dependencies>
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -60,6 +108,14 @@
                 <version>1.6.0</version>
                 <configuration>
                     <mainClass>MainKt</mainClass>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>11</source>
+                    <target>11</target>
                 </configuration>
             </plugin>
         </plugins>
@@ -83,6 +139,108 @@
             <artifactId>kotlin-stdlib</artifactId>
             <version>1.9.23</version>
         </dependency>
+
+        <!-- Exposed dependencies -->
+        <dependency>
+            <groupId>org.jetbrains.exposed</groupId>
+            <artifactId>exposed-core</artifactId>
+            <version>${exposed.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.exposed</groupId>
+            <artifactId>exposed-dao</artifactId>
+            <version>${exposed.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.exposed</groupId>
+            <artifactId>exposed-jdbc</artifactId>
+            <version>${exposed.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.exposed</groupId>
+            <artifactId>exposed-java-time</artifactId>
+            <version>${exposed.version}</version>
+        </dependency>
+
+
+        <!-- PostgreSQL driver -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgresql.version}</version>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>2.0.9</version>
+        </dependency>
+
+        <!-- Logback Classic for SLF4J -->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.4.14</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.cdimascio</groupId>
+            <artifactId>dotenv-kotlin</artifactId>
+            <version>6.4.1</version>
+        </dependency>
+
+        <!-- Ktor Netty engine -->
+        <dependency>
+            <groupId>io.ktor</groupId>
+            <artifactId>ktor-server-netty-jvm</artifactId>
+            <version>${ktor.version}</version>
+        </dependency>
+
+        <!-- Ktor Routing feature -->
+        <dependency>
+            <groupId>io.ktor</groupId>
+            <artifactId>ktor-server-core-jvm</artifactId>
+            <version>${ktor.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>de.mkammerer</groupId>
+            <artifactId>argon2-jvm</artifactId>
+            <version>2.11</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.microutils</groupId>
+            <artifactId>kotlin-logging-jvm</artifactId>
+            <version>2.1.21</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.ktor</groupId>
+            <artifactId>ktor-server-content-negotiation-jvm</artifactId>
+            <version>${ktor.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.ktor</groupId>
+            <artifactId>ktor-serialization-kotlinx-json-jvm</artifactId>
+            <version>${ktor.version}</version>
+        </dependency>
+
+        <!-- Kafka -->
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>3.7.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.ktor</groupId>
+            <artifactId>ktor-server-auth-jvm</artifactId>
+            <version>2.3.11</version>
+        </dependency>
+
     </dependencies>
 
 </project>
